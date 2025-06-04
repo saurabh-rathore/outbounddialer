@@ -1,0 +1,89 @@
+/* .form-container is not strictly needed if .container from global styles is used on a parent */
+/* However, if this component can be used in places without .container, then it's good to have */
+.campaign-form-card { /* Renamed from form-container for clarity and to avoid class name collision if nested */
+  background-color: #fff;
+  padding: 25px; /* Increased padding */
+  border-radius: 5px;
+  /* box-shadow: 0 2px 4px rgba(0,0,0,0.05); /* Subtle shadow, if not already on a parent .container */
+}
+
+.form-header h2 {
+  font-size: 1.8em;
+  margin-bottom: 20px;
+  padding-bottom: 10px;
+  border-bottom: 1px solid #eee;
+}
+
+.form-group {
+  margin-bottom: 18px; /* Slightly increased margin */
+}
+
+.form-group label {
+  display: block;
+  margin-bottom: 6px; /* Slightly increased margin */
+  font-weight: bold;
+  color: #555; /* Darker label color */
+}
+
+.form-group input[type="text"],
+.form-group input[type="date"],
+.form-group input[type="time"],
+.form-group textarea,
+.form-group select {
+  width: 100%;
+  padding: 12px; /* Increased padding for better touch experience */
+  border: 1px solid #ccc; /* Slightly darker border */
+  border-radius: 4px;
+  box-sizing: border-box;
+  font-size: 1em; /* Ensure form elements inherit font size */
+}
+
+.form-group input[type="text"]:focus,
+.form-group input[type="date"]:focus,
+.form-group input[type="time"]:focus,
+.form-group textarea:focus,
+.form-group select:focus {
+  border-color: #007bff; /* Highlight focus */
+  box-shadow: 0 0 0 0.2rem rgba(0,123,255,.25); /* Bootstrap-like focus shadow */
+}
+
+
+.form-actions {
+  margin-top: 25px; /* Increased margin */
+  padding-top: 20px; /* Space above actions */
+  border-top: 1px solid #eee; /* Separator line */
+  display: flex; /* Align buttons */
+  justify-content: flex-end; /* Align buttons to the right */
+}
+
+.form-actions button {
+  margin-left: 10px; /* Use margin-left for spacing when right-aligned */
+  min-width: 100px; /* Minimum width for action buttons */
+}
+/* Specific button styling (like .cancel) will come from global styles.css */
+
+textarea {
+  min-height: 100px; /* Increased min-height */
+  resize: vertical; /* Allow vertical resize */
+}
+
+.validation-error {
+  color: #dc3545; /* Bootstrap danger color */
+  font-size: 0.875em; /* Slightly smaller */
+  margin-top: 5px;
+}
+
+/* Styles for loading and error messages within the form */
+.loading-indicator, .error-message {
+  margin-bottom: 15px; /* Space it out from form elements */
+  padding: 10px;
+  border-radius: 4px;
+  text-align: center;
+}
+.loading-indicator {
+  background-color: #e9ecef;
+}
+.error-message {
+  background-color: #f8d7da;
+  color: #721c24;
+}

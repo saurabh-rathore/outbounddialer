@@ -1,0 +1,109 @@
+body {
+  font-family: Arial, sans-serif;
+  margin: 0;
+  padding: 0; /* Changed from 20px to 0 to allow full-width nav */
+  background-color: #f4f4f4;
+  color: #333;
+}
+
+h1, h2, h3 {
+  color: #333; /* Default h1, h2, h3 color */
+}
+
+a {
+  color: #007bff;
+  text-decoration: none;
+}
+a:hover {
+  text-decoration: underline;
+}
+
+.container {
+  width: 90%; /* Increased width for better use of space */
+  max-width: 1200px; /* Added max-width */
+  margin: 20px auto; /* Added top/bottom margin */
+  overflow: hidden;
+  background-color: #fff;
+  padding: 20px;
+  border-radius: 8px;
+  box-shadow: 0 0 10px rgba(0,0,0,0.1);
+}
+
+button {
+  background-color: #007bff;
+  color: white;
+  border: none;
+  padding: 10px 15px;
+  text-align: center;
+  text-decoration: none;
+  display: inline-block;
+  font-size: 14px;
+  border-radius: 4px;
+  cursor: pointer;
+  margin-right: 5px;
+  transition: background-color 0.2s ease-in-out; /* Added transition */
+}
+button:hover {
+  background-color: #0056b3;
+}
+button.delete, .delete-button { /* Added .delete-button for campaign list */
+  background-color: #dc3545;
+}
+button.delete:hover, .delete-button:hover {
+  background-color: #c82333;
+}
+button.edit, .edit-button { /* Added .edit-button for campaign list */
+  background-color: #ffc107;
+  color: #212529;
+}
+button.edit:hover, .edit-button:hover {
+  background-color: #e0a800;
+}
+/* Added styles for other campaign list buttons */
+.start-button {
+  background-color: #28a745;
+  color: white;
+}
+.start-button:hover {
+  background-color: #218838;
+}
+.pause-button {
+  background-color: #ffc107; /* Same as edit */
+  color: #212529;
+}
+.pause-button:hover {
+  background-color: #e0a800;
+}
+.stop-button {
+  background-color: #6c757d;
+  color: white;
+}
+.stop-button:hover {
+  background-color: #5a6268;
+}
+
+button.cancel { /* For forms */
+   background-color: #6c757d;
+}
+button.cancel:hover {
+   background-color: #5a6268;
+}
+
+/* General table styling (can be overridden by component styles) */
+table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 20px;
+}
+th, td {
+  border: 1px solid #ddd;
+  padding: 10px;
+  text-align: left;
+}
+th {
+  background-color: #007bff; /* Default theme color for headers */
+  color: white;
+}
+tr:nth-child(even) {
+  background-color: #f9f9f9; /* Lighter than #f2f2f2 for more subtlety */
+}

@@ -1,0 +1,33 @@
+.main-nav {
+  background-color: #007bff; /* Changed to primary blue */
+  color: white;
+  padding: 15px 30px; /* Adjusted padding */
+  text-align: center;
+  margin-bottom: 25px; /* Increased space below nav */
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1); /* Added subtle shadow */
+}
+
+.main-nav h1 {
+  margin: 0;
+  font-size: 1.75em; /* Adjusted size */
+  font-weight: 500; /* Lighter font weight for modern look */
+  color: white; /* Ensure h1 color is white */
+}
+
+/* .container styling is in global styles.css */
+
+/* If you had links in the nav and wanted to style them:
+.main-nav a {
+  color: #fff;
+  text-decoration: none;
+  margin: 0 10px;
+  padding: 5px 10px;
+  border-radius: 4px;
+  transition: background-color 0.2s ease-in-out;
+}
+
+.main-nav a:hover {
+  background-color: #0056b3;
+  text-decoration: none;
+}
+*/

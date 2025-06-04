@@ -1,0 +1,88 @@
+<div class="campaign-form-card">
+  <div class="form-header">
+    <h2>{{ isEditMode ? 'Edit Campaign' : 'Create New Campaign' }}</h2>
+  </div>
+
+  <div *ngIf="isLoading" class="loading-indicator">
+    <p>Loading form...</p>
+  </div>
+
+  <div *ngIf="errorMessage" class="error-message">
+    <p>{{ errorMessage }}</p>
+  </div>
+
+  <form *ngIf="!isLoading" (ngSubmit)="saveCampaign()" #campaignForm="ngForm">
+    <div class="form-group">
+      <label for="name">Campaign Name:</label>
+      <input type="text" id="name" name="name" [(ngModel)]="campaign.name" required #nameField="ngModel">
+      <div *ngIf="nameField.invalid && (nameField.dirty || nameField.touched)" class="validation-error">
+        Name is required.
+      </div>
+    </div>
+
+    <div class="form-group">
+      <label for="dialPlanId">Dial Plan ID (Optional):</label>
+      <input type="text" id="dialPlanId" name="dialPlanId" [(ngModel)]="campaign.dialPlanId">
+    </div>
+
+    <div class="form-group">
+      <label for="phoneNumbers">Phone Numbers (one per line):</label>
+      <textarea id="phoneNumbers" name="phoneNumbers" [(ngModel)]="phoneNumbersText" rows="5"></textarea>
+    </div>
+
+    <div class="form-group">
+      <label for="dndList">DND List (one per line, optional):</label>
+      <textarea id="dndList" name="dndList" [(ngModel)]="dndListText" rows="5"></textarea>
+    </div>
+
+    <div class="form-group">
+      <label for="startDate">Start Date:</label>
+      <input type="date" id="startDate" name="startDate" [ngModel]="campaign.startDate" (ngModelChange)="campaign.startDate = $event" required #startDateField="ngModel">
+      <div *ngIf="startDateField.invalid && (startDateField.dirty || startDateField.touched)" class="validation-error">
+        Start Date is required.
+      </div>
+    </div>
+
+    <div class="form-group">
+      <label for="endDate">End Date:</label>
+      <input type="date" id="endDate" name="endDate" [ngModel]="campaign.endDate" (ngModelChange)="campaign.endDate = $event" required #endDateField="ngModel">
+      <div *ngIf="endDateField.invalid && (endDateField.dirty || endDateField.touched)" class="validation-error">
+        End Date is required.
+      </div>
+    </div>
+
+    <div class="form-group">
+      <label for="startTime">Start Time (HH:MM):</label>
+      <input type="time" id="startTime" name="startTime" [(ngModel)]="campaign.startTime" required pattern="^([01]\d|2[0-3]):([0-5]\d)$" #startTimeField="ngModel">
+      <div *ngIf="startTimeField.invalid && (startTimeField.dirty || startTimeField.touched)" class="validation-error">
+        Start Time is required (HH:MM format).
+      </div>
+    </div>
+
+    <div class="form-group">
+      <label for="endTime">End Time (HH:MM):</label>
+      <input type="time" id="endTime" name="endTime" [(ngModel)]="campaign.endTime" required pattern="^([01]\d|2[0-3]):([0-5]\d)$" #endTimeField="ngModel">
+      <div *ngIf="endTimeField.invalid && (endTimeField.dirty || endTimeField.touched)" class="validation-error">
+        End Time is required (HH:MM format).
+      </div>
+    </div>
+
+    <div class="form-group">
+      <label for="status">Status:</label>
+      <select id="status" name="status" [(ngModel)]="campaign.status">
+        <option value="idle">Idle</option>
+        <option value="running">Running</option>
+        <option value="paused">Paused</option>
+        <option value="completed">Completed</option>
+        <option value="archived">Archived</option>
+      </select>
+    </div>
+
+    <div class="form-actions">
+      <button type="submit" [disabled]="campaignForm.invalid || isLoading">
+        {{ isEditMode ? 'Update Campaign' : 'Create Campaign' }}
+      </button>
+      <button type="button" (click)="cancel()" [disabled]="isLoading" class="cancel">Cancel</button>
+    </div>
+  </form>
+</div>

@@ -1,0 +1,66 @@
+<div> <!-- This outer div might be redundant if app.component has a good container -->
+  <div class="campaign-list-header">
+    <h2>Campaigns</h2>
+    <div> <!-- Wrapper for buttons if needed for layout -->
+      <button (click)="loadCampaigns()" [disabled]="isLoading" class="refresh-button">Refresh Campaigns</button>
+      <button routerLink="/campaigns/new" class="create-button">Create New Campaign</button>
+    </div>
+  </div>
+
+  <div *ngIf="isLoading" class="loading-indicator">
+    <p>Loading campaigns...</p>
+  </div>
+
+  <div *ngIf="errorMessage" class="error-message">
+    <p>{{ errorMessage }}</p>
+  </div>
+
+  <div *ngIf="!isLoading && !errorMessage && campaigns.length === 0" class="no-campaigns">
+    <p>No campaigns found. Why not create one?</p>
+  </div>
+
+  <table *ngIf="!isLoading && campaigns.length > 0">
+    <thead>
+      <tr>
+        <th>Name</th>
+        <th>Start Date</th>
+        <th>End Date</th>
+        <th>Start Time</th>
+        <th>End Time</th>
+        <th>Status</th>
+        <th>Progress (Called/Total)</th>
+        <th>Successful</th>
+        <th>Pending Retries</th>
+        <th>Actions</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr *ngFor="let campaign of campaigns">
+        <td>{{ campaign.name }}</td>
+        <td>{{ campaign.startDate | date:'yyyy-MM-dd' }}</td>
+        <td>{{ campaign.endDate | date:'yyyy-MM-dd' }}</td>
+        <td>{{ campaign.startTime }}</td>
+        <td>{{ campaign.endTime }}</td>
+        <td>{{ campaign.status }}</td>
+
+        <!-- Stats Cells -->
+        <ng-container *ngIf="campaignStatsMap.has(campaign._id) && (campaign.status === 'running' || campaign.status === 'paused' || campaign.status === 'completed' || campaign.status === 'idle')">
+          <td>{{ campaignStatsMap.get(campaign._id)?.processedNumbers }} / {{ campaignStatsMap.get(campaign._id)?.totalNumbers }}</td>
+          <td>{{ campaignStatsMap.get(campaign._id)?.successfulCalls }}</td>
+          <td>{{ campaignStatsMap.get(campaign._id)?.pendingRetries }}</td>
+        </ng-container>
+        <ng-container *ngIf="!campaignStatsMap.has(campaign._id) || !(campaign.status === 'running' || campaign.status === 'paused' || campaign.status === 'completed' || campaign.status === 'idle')">
+          <td colspan="3" class="stats-na">N/A</td>
+        </ng-container>
+
+        <td class="actions-cell">
+          <button *ngIf="campaign.status === 'idle' || campaign.status === 'paused'" (click)="onStartCampaign(campaign._id)" class="start-button">Start</button>
+          <button *ngIf="campaign.status === 'running'" (click)="onPauseCampaign(campaign._id)" class="pause-button">Pause</button>
+          <button *ngIf="campaign.status === 'running' || campaign.status === 'paused'" (click)="onStopCampaign(campaign._id)" class="stop-button">Stop</button>
+          <button [routerLink]="['/campaigns/edit', campaign._id]" class="edit-button">Edit</button>
+          <button (click)="deleteCampaign(campaign._id)" class="delete-button">Delete</button>
+        </td>
+      </tr>
+    </tbody>
+  </table>
+</div>

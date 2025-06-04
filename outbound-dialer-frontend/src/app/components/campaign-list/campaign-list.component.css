@@ -1,0 +1,82 @@
+table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 20px;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1); /* Added subtle shadow to table */
+}
+
+th, td {
+  border: 1px solid #e0e0e0; /* Lighter border */
+  padding: 12px 15px; /* Increased padding */
+  text-align: left;
+  vertical-align: middle; /* Align content vertically */
+}
+
+th {
+  background-color: #007bff; /* Primary theme color */
+  color: white;
+  font-weight: bold; /* Ensure header text is bold */
+}
+
+tr:nth-child(even) {
+  background-color: #f8f9fa; /* Slightly different even row color */
+}
+
+tr:hover {
+  background-color: #e9ecef; /* Hover effect for rows */
+}
+
+.actions-cell button,
+.actions-cell a.button { /* If using <a> tags styled as buttons */
+  margin-right: 5px;
+  margin-bottom: 5px; /* Add space if buttons wrap */
+  min-width: 80px; /* Ensure buttons have a decent minimum width */
+  padding: 8px 12px; /* Adjusted padding for action buttons */
+}
+
+/* Ensure global button styles apply or define specifics if needed */
+/* .edit-button, .delete-button, etc., can inherit from global styles.css */
+
+.campaign-list-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+  padding-bottom: 10px; /* Space below header */
+  border-bottom: 1px solid #eee; /* Separator line */
+}
+
+.campaign-list-header h2 {
+  margin: 0;
+  font-size: 1.8em; /* Larger heading for the list page */
+}
+
+.loading-indicator, .error-message, .no-campaigns {
+  margin-top: 20px;
+  padding: 15px;
+  border-radius: 5px;
+  text-align: center;
+}
+
+.loading-indicator {
+  background-color: #e9ecef;
+  border: 1px solid #ced4da;
+}
+
+.error-message {
+  background-color: #f8d7da;
+  color: #721c24;
+  border: 1px solid #f5c6cb;
+}
+
+.no-campaigns {
+  background-color: #d1ecf1;
+  color: #0c5460;
+  border: 1px solid #bee5eb;
+}
+
+.stats-na {
+  font-style: italic;
+  color: #6c757d; /* Bootstrap's secondary text color */
+  text-align: center;
+}
