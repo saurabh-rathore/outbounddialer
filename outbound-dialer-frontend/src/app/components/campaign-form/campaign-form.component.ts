@@ -8,14 +8,13 @@ import { Campaign, CampaignService } from '../../services/campaign.service';
   styleUrls: ['./campaign-form.component.css']
 })
 export class CampaignFormComponent implements OnInit {
-  // Use Partial<Campaign> for the form model to allow _id to be initially undefined for new campaigns
-  campaign: Partial<Campaign> = {
+  campaign: Partial<Campaign> = { // id will be undefined for new campaigns
     name: '',
     dialPlanId: '',
-    phoneNumbers: [], // Will be populated from phoneNumbersText
-    dndList: [],      // Will be populated from dndListText
-    startDate: '',    // Initialize as empty string for date input
-    endDate: '',      // Initialize as empty string for date input
+    phoneNumbers: [],
+    dndList: [],
+    startDate: '',
+    endDate: '',
     startTime: '09:00',
     endTime: '17:00',
     status: 'idle'
@@ -23,9 +22,9 @@ export class CampaignFormComponent implements OnInit {
 
   isEditMode: boolean = false;
   isLoading: boolean = false;
-  errorMessage: string | null = null;
+  errorMessage: string | null = null; // Changed to allow null for cleaner checks
+  pageTitle: string = 'Create Campaign'; // Added for dynamic title in template if needed
 
-  // Separate string properties for textarea binding
   phoneNumbersText: string = '';
   dndListText: string = '';
 
@@ -36,18 +35,26 @@ export class CampaignFormComponent implements OnInit {
   ) { }
 
   ngOnInit(): void {
-    const id = this.route.snapshot.paramMap.get('id');
-    if (id) {
+    const idParam = this.route.snapshot.paramMap.get('id');
+    if (idParam) {
       this.isEditMode = true;
+      this.pageTitle = 'Edit Campaign';
       this.isLoading = true;
-      this.campaignService.getCampaign(id).subscribe({
+      const numericId = +idParam; // Convert string idParam to number
+
+      if (isNaN(numericId)) {
+        console.error('Invalid campaign ID in route:', idParam);
+        this.errorMessage = 'Invalid campaign ID provided in the URL.';
+        this.isLoading = false;
+        return;
+      }
+
+      this.campaignService.getCampaign(numericId).subscribe({ // Use numericId
         next: (data) => {
-          // Format dates for input[type="date"] which expects YYYY-MM-DD
           data.startDate = this.formatDateForInput(data.startDate);
           data.endDate = this.formatDateForInput(data.endDate);
           this.campaign = data;
 
-          // Populate textarea helper properties
           this.phoneNumbersText = this.campaign.phoneNumbers ? this.campaign.phoneNumbers.join('\n') : '';
           this.dndListText = this.campaign.dndList ? this.campaign.dndList.join('\n') : '';
 
@@ -55,10 +62,13 @@ export class CampaignFormComponent implements OnInit {
         },
         error: (err) => {
           console.error('Error fetching campaign for edit', err);
-          this.errorMessage = 'Failed to load campaign data.';
+          this.errorMessage = `Failed to load campaign data: ${err.error?.message || err.message}`;
           this.isLoading = false;
         }
       });
+    } else {
+        // For new campaign, ensure default values are set if any specific logic needed
+        // This is already handled by campaign property initialization.
     }
   }
 
@@ -66,9 +76,7 @@ export class CampaignFormComponent implements OnInit {
     if (!dateStr) return '';
     try {
       const date = new Date(dateStr);
-      // Check if date is valid
       if (isNaN(date.getTime())) {
-          // Try to parse if it's already in YYYY-MM-DD format (e.g. from backend)
           const parts = dateStr.split('T')[0].split('-');
           if (parts.length === 3) return dateStr.split('T')[0];
           return '';
@@ -79,7 +87,7 @@ export class CampaignFormComponent implements OnInit {
       return `${year}-${month}-${day}`;
     } catch (e) {
       console.error("Error formatting date:", dateStr, e);
-      return ''; // Return empty or original if formatting fails
+      return '';
     }
   }
 
@@ -87,19 +95,17 @@ export class CampaignFormComponent implements OnInit {
     this.isLoading = true;
     this.errorMessage = null;
 
-    // Prepare payload by converting textarea strings to arrays
     const payload: Partial<Campaign> = {
       ...this.campaign,
       phoneNumbers: this.phoneNumbersText.split('\n').map(n => n.trim()).filter(n => n.length > 0),
       dndList: this.dndListText.split('\n').map(n => n.trim()).filter(n => n.length > 0),
     };
-    // Ensure dates are not empty strings if they are optional or handle as needed by backend
-    if (!payload.startDate) delete payload.startDate;
-    if (!payload.endDate) delete payload.endDate;
 
+    if (!payload.startDate) delete payload.startDate; // Or handle as error if required by backend always
+    if (!payload.endDate) delete payload.endDate;   // Or handle as error
 
-    if (this.isEditMode && payload._id) {
-      this.campaignService.updateCampaign(payload._id, payload).subscribe({
+    if (this.isEditMode && payload.id) { // Check for payload.id (number)
+      this.campaignService.updateCampaign(payload.id, payload).subscribe({ // Use payload.id (number)
         next: () => {
           this.router.navigate(['/campaigns']);
           this.isLoading = false;
@@ -111,9 +117,9 @@ export class CampaignFormComponent implements OnInit {
         }
       });
     } else {
-      // Remove _id for create operation if it somehow exists
-      delete payload._id;
-      this.campaignService.createCampaign(payload).subscribe({
+      // Ensure id is not part of the payload for create
+      const { id, ...createPayload } = payload;
+      this.campaignService.createCampaign(createPayload).subscribe({
         next: () => {
           this.router.navigate(['/campaigns']);
           this.isLoading = false;

@@ -13,8 +13,8 @@ export class CampaignListComponent implements OnInit, OnDestroy {
   isLoading: boolean = false;
   errorMessage: string | null = null;
 
-  campaignStatsMap: Map<string, CampaignStats> = new Map();
-  private pollingSubscriptions: Map<string, Subscription> = new Map();
+  campaignStatsMap: Map<number, CampaignStats> = new Map(); // Changed key type to number
+  private pollingSubscriptions: Map<number, Subscription> = new Map(); // Changed key type to number
 
   constructor(private campaignService: CampaignService) { }
 
@@ -34,17 +34,22 @@ export class CampaignListComponent implements OnInit, OnDestroy {
       next: (data) => {
         this.campaigns = data;
         this.isLoading = false;
+
+        // Create a Set of current campaign IDs for efficient lookup
+        const currentCampaignIds = new Set(this.campaigns.map(c => c.id));
+
         // Stop polling for campaigns that are no longer present or no longer running
-        this.pollingSubscriptions.forEach((_, campaignId) => {
-            const campaign = this.campaigns.find(c => c._id === campaignId);
+        this.pollingSubscriptions.forEach((_, campaignId) => { // campaignId is now number
+            const campaign = this.campaigns.find(c => c.id === campaignId); // Use .id
             if (!campaign || campaign.status !== 'running') {
                 this.stopPollingStats(campaignId);
             }
         });
+
         // Start polling for newly loaded running campaigns
         this.campaigns.forEach(campaign => {
           if (campaign.status === 'running') {
-            this.startPollingStats(campaign._id);
+            this.startPollingStats(campaign.id); // Use .id
           }
         });
       },
@@ -57,44 +62,41 @@ export class CampaignListComponent implements OnInit, OnDestroy {
   }
 
   private updateLocalCampaign(updatedCampaign: Campaign): void {
-    const index = this.campaigns.findIndex(c => c._id === updatedCampaign._id);
+    const index = this.campaigns.findIndex(c => c.id === updatedCampaign.id); // Use .id
     if (index !== -1) {
       this.campaigns[index] = updatedCampaign;
-      // this.campaigns = [...this.campaigns]; // To force change detection if needed
 
-      // Manage polling based on new status
       if (updatedCampaign.status === 'running') {
-        this.startPollingStats(updatedCampaign._id);
+        this.startPollingStats(updatedCampaign.id); // Use .id
       } else {
-        this.stopPollingStats(updatedCampaign._id);
-         // If campaign is completed or paused, fetch stats one last time
+        this.stopPollingStats(updatedCampaign.id); // Use .id
         if (updatedCampaign.status === 'completed' || updatedCampaign.status === 'paused' || updatedCampaign.status === 'idle') {
-          this.campaignService.getCampaignStats(updatedCampaign._id).subscribe(stats => {
-            this.campaignStatsMap.set(updatedCampaign._id, stats);
+          // Fetch stats one last time if campaign is no longer running but might have final stats
+          this.campaignService.getCampaignStats(updatedCampaign.id).subscribe(stats => { // Use .id
+            this.campaignStatsMap.set(updatedCampaign.id, stats); // Use .id
           });
         } else {
-             this.campaignStatsMap.delete(updatedCampaign._id); // Or keep last known stats
+             this.campaignStatsMap.delete(updatedCampaign.id); // Use .id
         }
       }
     }
   }
 
-  startPollingStats(campaignId: string): void {
+  startPollingStats(campaignId: number): void { // Changed campaignId to number
     if (this.pollingSubscriptions.has(campaignId)) {
-      return; // Already polling
+      return;
     }
-    const pollSub = timer(0, 10000) // Poll every 10 seconds, start immediately
+    const pollSub = timer(0, 10000)
       .pipe(
         takeWhile(() => {
-          const campaign = this.campaigns.find(c => c._id === campaignId);
-          return !!campaign && campaign.status === 'running'; // Continue while campaign exists and is running
+          const campaign = this.campaigns.find(c => c.id === campaignId); // Use .id
+          return !!campaign && campaign.status === 'running';
         }),
         switchMap(() => this.campaignService.getCampaignStats(campaignId)),
         catchError(error => {
-          console.error(`Error polling stats for ${campaignId}:`, error);
-          this.stopPollingStats(campaignId); // Stop on error
-          // Optionally show a user-facing error message for this specific campaign's stats
-          return []; // Return an empty observable to prevent the main stream from erroring out
+          console.error(`Error polling stats for campaign ID ${campaignId}:`, error);
+          this.stopPollingStats(campaignId);
+          return [];
         })
       )
       .subscribe(stats => {
@@ -103,38 +105,41 @@ export class CampaignListComponent implements OnInit, OnDestroy {
     this.pollingSubscriptions.set(campaignId, pollSub);
   }
 
-  stopPollingStats(campaignId: string): void {
+  stopPollingStats(campaignId: number): void { // Changed campaignId to number
     if (this.pollingSubscriptions.has(campaignId)) {
       this.pollingSubscriptions.get(campaignId)!.unsubscribe();
       this.pollingSubscriptions.delete(campaignId);
-      console.log(`Stopped polling stats for campaign ${campaignId}`);
-      // Optionally, decide if you want to remove the stats from the map or keep the last known value.
-      // For now, keeping them. If a campaign becomes non-running, its final stats might still be relevant.
-      // If you want to clear them: this.campaignStatsMap.delete(campaignId);
+      console.log(`Stopped polling stats for campaign ID ${campaignId}`);
     }
   }
 
-  deleteCampaign(id: string): void {
-    if (!id) {
+  // deleteCampaign is called by deleteCampaignWrapper
+  private deleteCampaignInternal(id: number): void { // Changed id to number, made private
+    this.campaignService.deleteCampaign(id).subscribe({
+      next: () => {
+        this.stopPollingStats(id);
+        this.campaignStatsMap.delete(id);
+        this.campaigns = this.campaigns.filter(campaign => campaign.id !== id); // Use .id
+      },
+      error: (err) => {
+        console.error('Error deleting campaign', err);
+        this.errorMessage = `Failed to delete campaign: ${err.error?.message || err.message}`;
+      }
+    });
+  }
+
+  // Wrapper for delete confirmation, called from template
+  deleteCampaignWrapper(id: number, name: string): void { // Changed id to number
+    if (!id) { // Added check for id, though type system helps
       console.error('Cannot delete campaign with undefined or null id');
       return;
     }
-    if (confirm('Are you sure you want to delete this campaign?')) {
-      this.campaignService.deleteCampaign(id).subscribe({
-        next: () => {
-          this.stopPollingStats(id); // Stop polling if it was running
-          this.campaignStatsMap.delete(id); // Remove its stats
-          this.campaigns = this.campaigns.filter(campaign => campaign._id !== id);
-        },
-        error: (err) => {
-          console.error('Error deleting campaign', err);
-          this.errorMessage = `Failed to delete campaign: ${err.error?.message || err.message}`;
-        }
-      });
+    if (confirm(`Are you sure you want to delete campaign "${name}"?`)) { // Name is still string
+      this.deleteCampaignInternal(id);
     }
   }
 
-  onStartCampaign(id: string): void {
+  onStartCampaign(id: number): void { // Changed id to number
     this.campaignService.startCampaign(id).subscribe({
       next: (updatedCampaign) => this.updateLocalCampaign(updatedCampaign),
       error: (err) => {
@@ -144,7 +149,7 @@ export class CampaignListComponent implements OnInit, OnDestroy {
     });
   }
 
-  onPauseCampaign(id: string): void {
+  onPauseCampaign(id: number): void { // Changed id to number
     this.campaignService.pauseCampaign(id).subscribe({
       next: (updatedCampaign) => this.updateLocalCampaign(updatedCampaign),
       error: (err) => {
@@ -154,7 +159,7 @@ export class CampaignListComponent implements OnInit, OnDestroy {
     });
   }
 
-  onStopCampaign(id: string): void {
+  onStopCampaign(id: number): void { // Changed id to number
     this.campaignService.stopCampaign(id).subscribe({
       next: (updatedCampaign) => this.updateLocalCampaign(updatedCampaign),
       error: (err) => {

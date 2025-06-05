@@ -44,21 +44,22 @@
         <td>{{ campaign.status }}</td>
 
         <!-- Stats Cells -->
-        <ng-container *ngIf="campaignStatsMap.has(campaign._id) && (campaign.status === 'running' || campaign.status === 'paused' || campaign.status === 'completed' || campaign.status === 'idle')">
-          <td>{{ campaignStatsMap.get(campaign._id)?.processedNumbers }} / {{ campaignStatsMap.get(campaign._id)?.totalNumbers }}</td>
-          <td>{{ campaignStatsMap.get(campaign._id)?.successfulCalls }}</td>
-          <td>{{ campaignStatsMap.get(campaign._id)?.pendingRetries }}</td>
+        <ng-container *ngIf="campaignStatsMap.has(campaign.id) && (campaign.status === 'running' || campaign.status === 'paused' || campaign.status === 'completed' || campaign.status === 'idle')">
+          <td>{{ campaignStatsMap.get(campaign.id)?.processedNumbers }} / {{ campaignStatsMap.get(campaign.id)?.totalNumbers }}</td>
+          <td>{{ campaignStatsMap.get(campaign.id)?.successfulCalls }}</td>
+          <td>{{ campaignStatsMap.get(campaign.id)?.pendingRetries }}</td>
         </ng-container>
-        <ng-container *ngIf="!campaignStatsMap.has(campaign._id) || !(campaign.status === 'running' || campaign.status === 'paused' || campaign.status === 'completed' || campaign.status === 'idle')">
+        <ng-container *ngIf="!campaignStatsMap.has(campaign.id) || !(campaign.status === 'running' || campaign.status === 'paused' || campaign.status === 'completed' || campaign.status === 'idle')">
           <td colspan="3" class="stats-na">N/A</td>
         </ng-container>
 
         <td class="actions-cell">
-          <button *ngIf="campaign.status === 'idle' || campaign.status === 'paused'" (click)="onStartCampaign(campaign._id)" class="start-button">Start</button>
-          <button *ngIf="campaign.status === 'running'" (click)="onPauseCampaign(campaign._id)" class="pause-button">Pause</button>
-          <button *ngIf="campaign.status === 'running' || campaign.status === 'paused'" (click)="onStopCampaign(campaign._id)" class="stop-button">Stop</button>
-          <button [routerLink]="['/campaigns/edit', campaign._id]" class="edit-button">Edit</button>
-          <button (click)="deleteCampaign(campaign._id)" class="delete-button">Delete</button>
+          <button *ngIf="campaign.status === 'idle' || campaign.status === 'paused'" (click)="onStartCampaign(campaign.id)" class="start-button">Start</button>
+          <button *ngIf="campaign.status === 'running'" (click)="onPauseCampaign(campaign.id)" class="pause-button">Pause</button>
+          <button *ngIf="campaign.status === 'running' || campaign.status === 'paused'" (click)="onStopCampaign(campaign.id)" class="stop-button">Stop</button>
+          <button [routerLink]="['/campaigns/edit', campaign.id]" class="edit-button">Edit</button>
+          <button (click)="deleteCampaignWrapper(campaign.id, campaign.name)" class="delete-button">Delete</button>
+          <!-- Changed deleteCampaign to deleteCampaignWrapper based on typical pattern -->
         </td>
       </tr>
     </tbody>

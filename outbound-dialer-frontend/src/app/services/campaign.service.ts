@@ -3,21 +3,20 @@ import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
 
 export interface Campaign {
-  _id: string;
+  id: number; // Changed from _id: string
   name: string;
-  dialPlanId?: string;
+  dialPlanId?: string; // This might become number if we make DialPlan ID numeric and associate
   phoneNumbers: string[];
   dndList: string[];
-  startDate: string; // Using string for simplicity
-  endDate: string;   // Using string for simplicity
-  startTime: string; // Format HH:MM
-  endTime: string;   // Format HH:MM
+  startDate: string;
+  endDate: string;
+  startTime: string;
+  endTime: string;
   status: 'idle' | 'running' | 'paused' | 'completed' | 'archived';
   createdAt?: string;
   updatedAt?: string;
-  // Optional fields that might come from stats or other detailed views
   currentIndex?: number;
-  callAttempts?: any[]; // Define more strictly if needed
+  callAttempts?: any[];
 }
 
 export interface CampaignStats {
@@ -35,7 +34,7 @@ export interface CampaignStats {
   providedIn: 'root'
 })
 export class CampaignService {
-  private apiUrl = '/api/campaigns'; // Using relative path for proxy
+  private apiUrl = '/api/campaigns';
 
   constructor(private http: HttpClient) { }
 
@@ -43,20 +42,23 @@ export class CampaignService {
     return this.http.get<Campaign[]>(this.apiUrl);
   }
 
-  getCampaign(id: string): Observable<Campaign> {
+  getCampaign(id: number): Observable<Campaign> { // Changed id to number
     return this.http.get<Campaign>(`${this.apiUrl}/${id}`);
   }
 
   createCampaign(campaign: Partial<Campaign>): Observable<Campaign> {
+    // If 'id' is part of Partial<Campaign> and is number, it's fine.
+    // Backend should ignore ID on create.
+    const { id, ...campaignData } = campaign; // Ensure id is not sent on create
     const payload = {
-      ...campaign,
-      phoneNumbers: campaign.phoneNumbers || [],
-      dndList: campaign.dndList || []
+      ...campaignData,
+      phoneNumbers: campaignData.phoneNumbers || [],
+      dndList: campaignData.dndList || []
     };
     return this.http.post<Campaign>(this.apiUrl, payload);
   }
 
-  updateCampaign(id: string, campaign: Partial<Campaign>): Observable<Campaign> {
+  updateCampaign(id: number, campaign: Partial<Campaign>): Observable<Campaign> { // Changed id to number
     const payload = {
       ...campaign,
       phoneNumbers: campaign.phoneNumbers || [],
@@ -65,25 +67,25 @@ export class CampaignService {
     return this.http.put<Campaign>(`${this.apiUrl}/${id}`, payload);
   }
 
-  deleteCampaign(id: string): Observable<any> {
+  deleteCampaign(id: number): Observable<any> { // Changed id to number
     return this.http.delete(`${this.apiUrl}/${id}`);
   }
 
   // State management methods
-  startCampaign(id: string): Observable<Campaign> {
+  startCampaign(id: number): Observable<Campaign> { // Changed id to number
     return this.http.put<Campaign>(`${this.apiUrl}/${id}/start`, {});
   }
 
-  pauseCampaign(id: string): Observable<Campaign> {
+  pauseCampaign(id: number): Observable<Campaign> { // Changed id to number
     return this.http.put<Campaign>(`${this.apiUrl}/${id}/pause`, {});
   }
 
-  stopCampaign(id: string): Observable<Campaign> {
+  stopCampaign(id: number): Observable<Campaign> { // Changed id to number
     return this.http.put<Campaign>(`${this.apiUrl}/${id}/stop`, {});
   }
 
   // Stats method
-  getCampaignStats(id: string): Observable<CampaignStats> {
+  getCampaignStats(id: number): Observable<CampaignStats> { // Changed id to number
     return this.http.get<CampaignStats>(`${this.apiUrl}/${id}/stats`);
   }
 }
