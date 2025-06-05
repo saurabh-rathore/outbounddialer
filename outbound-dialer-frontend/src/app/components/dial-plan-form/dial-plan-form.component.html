@@ -1,0 +1,53 @@
+<div class="form-card dial-plan-form-card"> <!-- Using a more specific class if needed, or just 'form-card' -->
+  <div class="form-header">
+    <h2>{{ pageTitle }}</h2>
+  </div>
+
+  <div *ngIf="isLoading && isEditMode" class="loading-indicator"> <!-- Only show loading on edit mode fetch -->
+    <p>Loading dial plan data...</p>
+  </div>
+
+  <form *ngIf="!isLoading || !isEditMode" (ngSubmit)="saveDialPlan()" #dpForm="ngForm">
+    <div class="form-group">
+      <label for="dp-name">Name:</label>
+      <input type="text" id="dp-name" class="form-control"
+             [(ngModel)]="dialPlan.name" name="name" required
+             #nameField="ngModel">
+      <div *ngIf="nameField.invalid && (nameField.dirty || nameField.touched)" class="validation-error">
+        Name is required.
+      </div>
+    </div>
+
+    <div class="form-group">
+      <label for="dp-description">Description:</label>
+      <textarea id="dp-description" class="form-control"
+                [(ngModel)]="dialPlan.description" name="description" rows="3"></textarea>
+    </div>
+
+    <div class="form-group">
+      <label for="dp-configuration">Configuration (JSON):</label>
+      <textarea id="dp-configuration" class="form-control configuration-textarea"
+                [(ngModel)]="configurationText" name="configurationText"
+                rows="15" required
+                placeholder="Enter dial plan configuration as JSON..."
+                #configField="ngModel"></textarea>
+      <div *ngIf="configField.touched && !configurationText.trim()" class="validation-error">
+        Configuration JSON cannot be empty.
+      </div>
+      <div *ngIf="configField.touched && configurationText.trim() && !isValidJson()" class="validation-error">
+        Invalid JSON format.
+      </div>
+    </div>
+
+    <div *ngIf="errorMessage" class="error-message global-error">
+      <p>{{ errorMessage }}</p>
+    </div>
+
+    <div class="form-actions">
+      <button type="submit" [disabled]="!isFormValid() || isLoading">
+        {{ isEditMode ? 'Update' : 'Create' }} Dial Plan
+      </button>
+      <button type="button" class="cancel" (click)="cancel()" [disabled]="isLoading">Cancel</button>
+    </div>
+  </form>
+</div>

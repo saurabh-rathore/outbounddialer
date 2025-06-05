@@ -1,0 +1,63 @@
+<div class="list-container"> <!-- Using a generic container class for list views -->
+  <div class="list-header">
+    <h2>Dial Plans</h2>
+    <button routerLink="/dialplans/new" class="create-button">Create New Dial Plan</button>
+  </div>
+
+  <div *ngIf="isLoading" class="loading-indicator">
+    <p>Loading dial plans...</p>
+  </div>
+
+  <div *ngIf="errorMessage" class="error-message">
+    <p>{{ errorMessage }}</p>
+    <button (click)="loadDialPlans()">Try Again</button>
+  </div>
+
+  <div *ngIf="!isLoading && !errorMessage && dialPlans.length === 0" class="no-data">
+    <p>No dial plans found. Get started by creating one!</p>
+  </div>
+
+  <table *ngIf="!isLoading && !errorMessage && dialPlans.length > 0" class="data-table">
+    <thead>
+      <tr>
+        <th>Name</th>
+        <th>Description</th>
+        <!-- <th>Configuration (Preview)</th> -->
+        <th>Actions</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr *ngFor="let dp of dialPlans">
+        <td>{{ dp.name }}</td>
+        <td>{{ dp.description | slice:0:100 }}{{ (dp.description && dp.description.length > 100) ? '...' : '' }}</td>
+        <!-- <td><pre>{{ dp.configuration | json | slice:0:100 }}...</pre></td> -->
+        <td class="actions-cell">
+          <button class="edit" [routerLink]="['/dialplans/edit', dp.id]">Edit</button>
+          <button (click)="onGenerateConfig(dp)" class="generate-conf-button">Generate Conf</button>
+          <button class="delete" (click)="deleteDialPlanWrapper(dp.id, dp.name)">Delete</button>
+        </td>
+      </tr>
+    </tbody>
+  </table>
+</div>
+
+<!-- Modal-like structure for config preview -->
+<div *ngIf="selectedDialPlanForPreview" class="config-preview-modal-backdrop" (click)="closePreview()"></div>
+<div *ngIf="selectedDialPlanForPreview" class="config-preview-modal">
+  <div class="config-preview-header">
+    <h3>Generated Configuration for: {{ selectedDialPlanForPreview.name }}</h3>
+    <button class="close-btn" (click)="closePreview()">&times;</button>
+  </div>
+  <div class="config-preview-content">
+    <div *ngIf="isPreviewLoading" class="loading-indicator">
+      <p>Generating configuration...</p>
+    </div>
+    <div *ngIf="previewErrorMessage" class="error-message">
+      <p>{{ previewErrorMessage }}</p>
+    </div>
+    <pre *ngIf="generatedConfig && !isPreviewLoading">{{ generatedConfig }}</pre>
+  </div>
+  <div class="config-preview-actions" *ngIf="generatedConfig && !isPreviewLoading && !previewErrorMessage">
+    <button (click)="downloadGeneratedConfig()" class="download-button">Download .conf</button>
+  </div>
+</div>

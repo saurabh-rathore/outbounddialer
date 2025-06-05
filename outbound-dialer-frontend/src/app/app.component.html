@@ -1,7 +1,11 @@
 <nav class="main-nav">
-  <h1>Outbound Dialer Campaigns</h1>
-  <!-- Example link, if you want navigation distinct from content page titles -->
-  <!-- <a routerLink="/campaigns">View Campaigns</a> -->
+  <div class="nav-content">
+    <h1>Outbound Dialer</h1>
+    <ul>
+      <li><a routerLink="/campaigns" routerLinkActive="active-link">Campaigns</a></li>
+      <li><a routerLink="/dialplans" routerLinkActive="active-link">Dial Plans</a></li>
+    </ul>
+  </div>
 </nav>
 <div class="container">
   <router-outlet></router-outlet>

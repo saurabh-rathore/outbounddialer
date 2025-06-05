@@ -1,33 +1,57 @@
 .main-nav {
-  background-color: #007bff; /* Changed to primary blue */
+  background-color: #007bff;
   color: white;
-  padding: 15px 30px; /* Adjusted padding */
-  text-align: center;
-  margin-bottom: 25px; /* Increased space below nav */
-  box-shadow: 0 2px 4px rgba(0,0,0,0.1); /* Added subtle shadow */
+  padding: 0 20px; /* Let content define height */
+  margin-bottom: 25px;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.main-nav .nav-content {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  max-width: 1200px; /* Align with .container max-width if needed */
+  margin: 0 auto; /* Center nav content */
+  padding: 10px 0; /* Padding for top/bottom of nav content */
 }
 
 .main-nav h1 {
   margin: 0;
-  font-size: 1.75em; /* Adjusted size */
-  font-weight: 500; /* Lighter font weight for modern look */
-  color: white; /* Ensure h1 color is white */
+  font-size: 1.6em; /* Slightly smaller to fit with links */
+  font-weight: 500;
+  color: white;
+}
+
+.main-nav ul {
+  list-style-type: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+}
+
+.main-nav ul li {
+  margin-left: 15px; /* Space between links */
+}
+
+.main-nav ul li a {
+  color: #f0f0f0; /* Lighter color for inactive links */
+  text-decoration: none;
+  padding: 8px 12px;
+  border-radius: 4px;
+  transition: background-color 0.2s ease-in-out, color 0.2s ease-in-out;
+  font-size: 0.95em;
+}
+
+.main-nav ul li a:hover {
+  background-color: #0056b3;
+  color: #ffffff; /* White text on hover */
+  text-decoration: none;
+}
+
+.main-nav ul li a.active-link {
+  background-color: #004a99; /* Darker blue for active link */
+  color: #ffffff; /* White text for active link */
+  font-weight: bold;
 }
 
 /* .container styling is in global styles.css */
-
-/* If you had links in the nav and wanted to style them:
-.main-nav a {
-  color: #fff;
-  text-decoration: none;
-  margin: 0 10px;
-  padding: 5px 10px;
-  border-radius: 4px;
-  transition: background-color 0.2s ease-in-out;
-}
-
-.main-nav a:hover {
-  background-color: #0056b3;
-  text-decoration: none;
-}
-*/

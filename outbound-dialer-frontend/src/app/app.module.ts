@@ -7,12 +7,16 @@ import { AppRoutingModule } from './app-routing.module';
 import { AppComponent } from './app.component';
 import { CampaignListComponent } from './components/campaign-list/campaign-list.component';
 import { CampaignFormComponent } from './components/campaign-form/campaign-form.component';
+import { DialPlanListComponent } from './components/dial-plan-list/dial-plan-list.component';
+import { DialPlanFormComponent } from './components/dial-plan-form/dial-plan-form.component';
 
 @NgModule({
   declarations: [
     AppComponent,
     CampaignListComponent,
-    CampaignFormComponent
+    CampaignFormComponent,
+    DialPlanListComponent,
+    DialPlanFormComponent
   ],
   imports: [
     BrowserModule,

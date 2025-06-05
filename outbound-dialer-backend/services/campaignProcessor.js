@@ -1,173 +1,178 @@
-const Campaign = require('../models/Campaign');
+'use strict';
+
+const { Campaign, CallAttempt } = require('../models'); // Sequelize way
+const { Op } = require('sequelize'); // For Sequelize operators
 
 const MAX_RETRIES = 3;
 const RETRY_DELAY_MS = 60000; // 1 minute
 const CALL_SIMULATION_DELAY_MS = 1000; // 1 second delay between simulated calls
-const BATCH_SIZE = 5; // Process up to 5 primary numbers per run to avoid long blocking
+const BATCH_SIZE = 5; // Process up to 5 primary numbers per run
 
-async function processCampaign(campaign) {
-  console.log(`Processing campaign: ${campaign.name} (ID: ${campaign._id}, Status: ${campaign.status})`);
+async function processCampaign(campaignInstance) {
+  console.log(`Processing campaign: ${campaignInstance.name} (ID: ${campaignInstance.id}, Status: ${campaignInstance.status})`);
+  let campaignModified = false;
 
   // 1. Check campaign date/time validity
   const now = new Date();
-  if (now < campaign.startDate || now > campaign.endDate) {
-    console.log(`Campaign ${campaign.name} is outside its date range.`);
-    // Optionally set to 'idle' or 'completed' if past endDate
-    if (now > campaign.endDate && campaign.status !== 'completed' && campaign.status !== 'archived') {
-        campaign.status = 'completed';
-        console.log(`Campaign ${campaign.name} marked as completed due to end date.`);
-        await campaign.save();
+  const todayDateOnly = `${now.getFullYear()}-${('0' + (now.getMonth() + 1)).slice(-2)}-${('0' + now.getDate()).slice(-2)}`;
+
+  if (todayDateOnly < campaignInstance.startDate || todayDateOnly > campaignInstance.endDate) {
+    console.log(`Campaign ${campaignInstance.name} is outside its date range (${campaignInstance.startDate} to ${campaignInstance.endDate}). Today: ${todayDateOnly}`);
+    if (todayDateOnly > campaignInstance.endDate && campaignInstance.status !== 'completed' && campaignInstance.status !== 'archived') {
+      campaignInstance.status = 'completed';
+      console.log(`Campaign ${campaignInstance.name} marked as completed due to end date.`);
+      campaignModified = true;
     }
-    return;
+    // If campaignModified is true, it will be saved at the end. If not, we just return.
+    if (!campaignModified) return;
   }
 
-  const currentTime = `${('0' + now.getHours()).slice(-2)}:${('0' + now.getMinutes()).slice(-2)}`;
-  if (currentTime < campaign.startTime || currentTime > campaign.endTime) {
-    console.log(`Campaign ${campaign.name} is outside its time range.`);
-    return;
+  const currentTime = `${('0' + now.getHours()).slice(-2)}:${('0' + now.getMinutes()).slice(-2)}:00`; // HH:MM:SS format for TIME type
+  if (currentTime < campaignInstance.startTime || currentTime > campaignInstance.endTime) {
+    console.log(`Campaign ${campaignInstance.name} is outside its time range (${campaignInstance.startTime} to ${campaignInstance.endTime}). Current: ${currentTime}`);
+    return; // Don't modify or save if just outside time range for today
   }
 
-  let campaignModified = false;
+  const dndSet = new Set(campaignInstance.dndList || []);
 
   // 2. Process Retries
-  const retryAttempts = campaign.callAttempts.filter(attempt =>
-    attempt.status === 'pending' &&
-    attempt.retryCount < MAX_RETRIES &&
-    (Date.now() - attempt.timestamp.getTime()) > RETRY_DELAY_MS
-  );
+  const pendingRetryAttempts = await CallAttempt.findAll({
+    where: {
+      campaignId: campaignInstance.id,
+      status: 'pending',
+      retryCount: { [Op.lt]: MAX_RETRIES },
+      timestamp: { [Op.lte]: new Date(Date.now() - RETRY_DELAY_MS) }
+    },
+    limit: BATCH_SIZE
+  });
 
-  for (const attempt of retryAttempts) {
-    if (campaign.dndList.includes(attempt.phoneNumber)) {
-      console.log(`Dialing (retry DND blocked) ${attempt.phoneNumber}`);
+  for (const attempt of pendingRetryAttempts) {
+    if (dndSet.has(attempt.phoneNumber)) {
       attempt.status = 'dnd_blocked';
-      attempt.timestamp = new Date();
-      campaignModified = true;
-      continue;
+      console.log(`DND blocked (retry) ${attempt.phoneNumber} for campaign ${campaignInstance.name}`);
+    } else {
+      const outcome = Math.random() < 0.7 ? 'success' : (Math.random() < 0.5 ? 'busy' : 'no_answer');
+      console.log(`Dialing (retry ${attempt.retryCount + 1}) ${attempt.phoneNumber} for campaign ${campaignInstance.name}: ${outcome}`);
+      attempt.status = outcome;
+      if (outcome !== 'success') {
+        if (attempt.retryCount + 1 >= MAX_RETRIES) {
+          attempt.status = 'failed_retry';
+        } else {
+          attempt.status = 'pending'; // Stays pending
+        }
+      }
     }
-
     attempt.retryCount += 1;
     attempt.timestamp = new Date();
-    // Simulate call outcome
-    const randomOutcome = Math.random();
-    if (randomOutcome < 0.6) attempt.status = 'success'; // 60% success
-    else if (randomOutcome < 0.8) attempt.status = 'busy'; // 20% busy
-    else attempt.status = 'no_answer'; // 20% no_answer
-
-    console.log(`Dialing (retry ${attempt.retryCount}) ${attempt.phoneNumber}: ${attempt.status}`);
-
-    if (attempt.status === 'success' || attempt.retryCount >= MAX_RETRIES) {
-      if (attempt.status !== 'success') attempt.status = 'failed_retry'; // Mark as failed if max retries reached
-    } else {
-      attempt.status = 'pending'; // Keep as pending if not success and not max retries
-    }
+    await attempt.save();
     campaignModified = true;
     await new Promise(resolve => setTimeout(resolve, CALL_SIMULATION_DELAY_MS));
   }
 
   // 3. Process Primary Numbers (Batch)
-  let primaryNumbersProcessedThisRun = 0;
-  while (campaign.currentIndex < campaign.phoneNumbers.length && primaryNumbersProcessedThisRun < BATCH_SIZE) {
-    const phoneNumber = campaign.phoneNumbers[campaign.currentIndex];
+  // Ensure phoneNumbers is not null before trying to slice
+  const phoneNumbersList = campaignInstance.phoneNumbers || [];
+  const numbersToProcess = phoneNumbersList.slice(campaignInstance.currentIndex, campaignInstance.currentIndex + BATCH_SIZE);
+  let numbersProcessedInBatch = 0;
 
-    // Check if already attempted (e.g., from a previous run that was interrupted or if numbers can be duplicated in list)
-    const existingAttempt = campaign.callAttempts.find(a => a.phoneNumber === phoneNumber);
-    if (existingAttempt && existingAttempt.status !== 'pending') { // If pending, retry logic handles it. If success/failed, skip.
-        console.log(`Skipping ${phoneNumber} as it was already processed with status: ${existingAttempt.status}.`);
-        campaign.currentIndex += 1;
-        campaignModified = true;
-        continue;
-    }
+  for (const phoneNumber of numbersToProcess) {
+    // Check if this number has already been successfully called or terminally failed in a previous attempt for this campaign
+    const existingFinalAttempt = await CallAttempt.findOne({
+        where: {
+            campaignId: campaignInstance.id,
+            phoneNumber: phoneNumber,
+            status: { [Op.in]: ['success', 'failed_retry', 'dnd_blocked'] }
+        }
+    });
 
-
-    if (campaign.dndList.includes(phoneNumber)) {
-      console.log(`Dialing (DND blocked) ${phoneNumber}`);
-      campaign.callAttempts.push({
+    if (existingFinalAttempt) {
+        console.log(`Skipping ${phoneNumber} as it already has a final status: ${existingFinalAttempt.status}`);
+        // This number is considered processed in terms of advancing the main list.
+    } else if (dndSet.has(phoneNumber)) {
+      console.log(`DND blocked ${phoneNumber} for campaign ${campaignInstance.name}`);
+      await CallAttempt.create({
+        campaignId: campaignInstance.id,
         phoneNumber: phoneNumber,
         status: 'dnd_blocked',
-        timestamp: new Date(),
-        retryCount: 0
+        retryCount: 0,
+        timestamp: new Date()
       });
-      campaign.currentIndex += 1;
       campaignModified = true;
-      primaryNumbersProcessedThisRun++;
-      continue;
+    } else {
+      const outcome = Math.random() < 0.7 ? 'success' : (Math.random() < 0.5 ? 'busy' : 'no_answer');
+      console.log(`Dialing (primary) ${phoneNumber} for campaign ${campaignInstance.name}: ${outcome}`);
+      await CallAttempt.create({
+        campaignId: campaignInstance.id,
+        phoneNumber: phoneNumber,
+        status: outcome === 'success' ? 'success' : 'pending',
+        retryCount: 0, // Initial attempt for primary numbers
+        timestamp: new Date()
+      });
+      campaignModified = true;
     }
-
-    // Simulate call outcome
-    const randomOutcome = Math.random();
-    let outcomeStatus;
-    if (randomOutcome < 0.6) outcomeStatus = 'success';
-    else if (randomOutcome < 0.8) outcomeStatus = 'busy';
-    else outcomeStatus = 'no_answer';
-
-    console.log(`Dialing (primary) ${phoneNumber}: ${outcomeStatus}`);
-
-    campaign.callAttempts.push({
-      phoneNumber: phoneNumber,
-      status: (outcomeStatus === 'success') ? 'success' : 'pending', // If not success, mark for potential retry
-      timestamp: new Date(),
-      retryCount: (outcomeStatus === 'success') ? 0 : 1 // Start retry count if it's a failure
-    });
-    campaign.currentIndex += 1;
-    campaignModified = true;
-    primaryNumbersProcessedThisRun++;
+    numbersProcessedInBatch++; // Increment for every number considered from the slice
     await new Promise(resolve => setTimeout(resolve, CALL_SIMULATION_DELAY_MS));
   }
 
-  // 4. Check for Campaign Completion
-  const allPrimaryProcessed = campaign.currentIndex >= campaign.phoneNumbers.length;
-  const noPendingRetries = !campaign.callAttempts.some(a => a.status === 'pending' && a.retryCount < MAX_RETRIES);
+  if (numbersProcessedInBatch > 0) {
+    campaignInstance.currentIndex += numbersProcessedInBatch;
+    campaignModified = true;
+  }
 
-  if (allPrimaryProcessed && noPendingRetries) {
-    campaign.status = 'completed';
-    console.log(`Campaign ${campaign.name} completed.`);
+  // 4. Check for Campaign Completion
+  const remainingPrimaryNumbers = phoneNumbersList.length - campaignInstance.currentIndex;
+  const newPendingRetriesCount = await CallAttempt.count({
+    where: {
+      campaignId: campaignInstance.id,
+      status: 'pending',
+      retryCount: { [Op.lt]: MAX_RETRIES }
+    }
+  });
+
+  if (remainingPrimaryNumbers <= 0 && newPendingRetriesCount === 0) {
+    campaignInstance.status = 'completed';
+    console.log(`Campaign ${campaignInstance.name} (ID: ${campaignInstance.id}) marked as completed.`);
     campaignModified = true;
   }
 
   if (campaignModified) {
-    campaign.updatedAt = new Date(); // Ensure updatedAt is set
-    await campaign.save();
-    console.log(`Campaign ${campaign.name} saved with updates.`);
+    await campaignInstance.save();
+    console.log(`Campaign ${campaignInstance.name} (ID: ${campaignInstance.id}) saved with updates.`);
   } else {
-    console.log(`No changes for campaign ${campaign.name} in this run.`);
+    console.log(`No changes requiring save for campaign ${campaignInstance.name} (ID: ${campaignInstance.id}) in this run.`);
   }
 }
 
 async function runProcessor() {
-  console.log('Campaign processor running...');
+  console.log(`Campaign processor cycle started at ${new Date().toISOString()}`);
   try {
-    const runningCampaigns = await Campaign.find({ status: 'running' });
-    if (runningCampaigns.length === 0) {
-      console.log('No running campaigns to process.');
-      return;
-    }
+    const runningCampaigns = await Campaign.findAll({
+      where: { status: 'running' }
+    });
 
-    for (const campaign of runningCampaigns) {
-      // Wrap processCampaign in a try-catch to prevent one campaign error from stopping others
-      try {
-        await processCampaign(campaign);
-      } catch (error) {
-        console.error(`Error processing campaign ${campaign._id}:`, error);
-        // Optionally update campaign status to 'paused' or log error to campaign itself
+    if (runningCampaigns.length === 0) {
+      console.log('No running campaigns to process in this cycle.');
+    } else {
+      console.log(`Found ${runningCampaigns.length} running campaign(s). Processing...`);
+      for (const campaign of runningCampaigns) {
         try {
+          await processCampaign(campaign);
+        } catch (campaignError) {
+          console.error(`Error processing campaign ID ${campaign.id} (${campaign.name}):`, campaignError);
+          try {
             campaign.status = 'paused'; // Pause campaign on error
-            campaign.callAttempts.push({
-                phoneNumber: 'PROCESSOR_ERROR',
-                status: 'failed_retry', // Using an existing enum value
-                timestamp: new Date(),
-                // Could add an 'errorMessage' field to callAttemptSchema later
-            });
             await campaign.save();
-            console.log(`Campaign ${campaign._id} paused due to processing error.`);
-        } catch (saveError) {
-            console.error(`Failed to save campaign ${campaign._id} after processing error:`, saveError);
+            console.log(`Campaign ID ${campaign.id} (${campaign.name}) paused due to processing error.`);
+          } catch (saveError) {
+            console.error(`Failed to pause campaign ID ${campaign.id} after error:`, saveError);
+          }
         }
       }
     }
   } catch (error) {
-    console.error('Error fetching running campaigns:', error);
+    console.error('Error in campaign processor main loop:', error);
   }
-  console.log('Campaign processor finished run.');
+  console.log(`Campaign processor cycle finished at ${new Date().toISOString()}`);
 }
 
-module.exports = { runProcessor, processCampaign }; // Export processCampaign for potential direct use/testing
+module.exports = { runProcessor };

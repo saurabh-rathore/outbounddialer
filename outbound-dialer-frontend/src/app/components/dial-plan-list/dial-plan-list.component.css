@@ -1,0 +1,122 @@
+/* Styles for DialPlanListComponent can go here if specific overrides are needed */
+/* For example, if .list-container, .list-header, .data-table from global styles.css */
+/* need adjustments for this specific component. */
+
+/* Add button styling if not fully covered by global styles or for specificity */
+.actions-cell .generate-conf-button {
+  background-color: #17a2b8; /* Teal/Info color */
+  color: white;
+}
+.actions-cell .generate-conf-button:hover {
+  background-color: #138496;
+}
+
+/* Config Preview Modal Styles */
+.config-preview-modal-backdrop {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0, 0, 0, 0.6); /* Darker backdrop */
+  z-index: 1040; /* Bootstrap modal backdrop z-index */
+}
+
+.config-preview-modal {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 85%; /* Wider for config */
+  max-width: 800px; /* Max width */
+  max-height: 90vh; /* Taller modal */
+  background-color: white;
+  border-radius: 8px;
+  box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+  z-index: 1050; /* Bootstrap modal z-index */
+  display: flex;
+  flex-direction: column;
+}
+
+.config-preview-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1rem 1.5rem;
+  border-bottom: 1px solid #dee2e6; /* Bootstrap modal header border */
+}
+
+.config-preview-header h3 {
+  margin: 0;
+  font-size: 1.25rem; /* Bootstrap modal title size */
+}
+
+.config-preview-header .close-btn {
+  background: transparent; /* Transparent background */
+  border: none;
+  font-size: 1.8em; /* Larger close icon */
+  font-weight: bold;
+  line-height: 1;
+  color: #000;
+  text-shadow: 0 1px 0 #fff;
+  opacity: .5;
+  padding: 1rem; /* Easier to click */
+  margin: -1rem -1rem -1rem auto; /* Align to right, counteract padding */
+  cursor: pointer;
+}
+.config-preview-header .close-btn:hover {
+  opacity: .75;
+}
+
+
+.config-preview-content {
+  padding: 1.5rem;
+  overflow-y: auto;
+  flex-grow: 1;
+  min-height: 200px; /* Ensure a minimum height for content area */
+}
+
+.config-preview-content pre {
+  background-color: #f8f9fa; /* Lighter background for pre */
+  padding: 1rem;
+  border: 1px solid #dee2e6; /* Border for pre */
+  border-radius: 4px;
+  white-space: pre-wrap;
+  word-wrap: break-word;
+  max-height: calc(90vh - 200px); /* Adjust based on header/footer height */
+  overflow-y: auto;
+  font-size: 0.875em; /* Slightly smaller font for config */
+  color: #212529; /* Darker text for readability */
+}
+
+.config-preview-actions {
+  padding: 1rem 1.5rem;
+  text-align: right;
+  border-top: 1px solid #dee2e6; /* Bootstrap modal footer border */
+}
+
+.config-preview-actions .download-button {
+  background-color: #28a745; /* Green for download */
+  color: white;
+}
+.config-preview-actions .download-button:hover {
+  background-color: #218838;
+}
+
+/* Ensure loading/error messages inside modal are styled */
+.config-preview-content .loading-indicator,
+.config-preview-content .error-message {
+  margin-top: 0; /* Reset margin if inside content */
+  padding: 15px;
+  border-radius: 5px;
+  text-align: center;
+}
+.config-preview-content .loading-indicator {
+  background-color: #e9ecef;
+  border: 1px solid #ced4da;
+}
+.config-preview-content .error-message {
+  background-color: #f8d7da;
+  color: #721c24;
+  border: 1px solid #f5c6cb;
+}
